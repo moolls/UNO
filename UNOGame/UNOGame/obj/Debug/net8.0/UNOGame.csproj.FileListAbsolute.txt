@@ -1,0 +1,14 @@
+/Users/emilychambers/UNO2/UNOGame/UNOGame/obj/Debug/net8.0/UNOGame.GeneratedMSBuildEditorConfig.editorconfig
+/Users/emilychambers/UNO2/UNOGame/UNOGame/obj/Debug/net8.0/UNOGame.AssemblyInfoInputs.cache
+/Users/emilychambers/UNO2/UNOGame/UNOGame/obj/Debug/net8.0/UNOGame.AssemblyInfo.cs
+/Users/emilychambers/UNO2/UNOGame/UNOGame/obj/Debug/net8.0/UNOGame.csproj.CoreCompileInputs.cache
+/Users/emilychambers/UNO2/UNOGame/UNOGame/bin/Debug/net8.0/UNOGame
+/Users/emilychambers/UNO2/UNOGame/UNOGame/bin/Debug/net8.0/UNOGame.deps.json
+/Users/emilychambers/UNO2/UNOGame/UNOGame/bin/Debug/net8.0/UNOGame.runtimeconfig.json
+/Users/emilychambers/UNO2/UNOGame/UNOGame/bin/Debug/net8.0/UNOGame.dll
+/Users/emilychambers/UNO2/UNOGame/UNOGame/bin/Debug/net8.0/UNOGame.pdb
+/Users/emilychambers/UNO2/UNOGame/UNOGame/obj/Debug/net8.0/UNOGame.dll
+/Users/emilychambers/UNO2/UNOGame/UNOGame/obj/Debug/net8.0/refint/UNOGame.dll
+/Users/emilychambers/UNO2/UNOGame/UNOGame/obj/Debug/net8.0/UNOGame.pdb
+/Users/emilychambers/UNO2/UNOGame/UNOGame/obj/Debug/net8.0/UNOGame.genruntimeconfig.cache
+/Users/emilychambers/UNO2/UNOGame/UNOGame/obj/Debug/net8.0/ref/UNOGame.dll
