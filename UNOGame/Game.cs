@@ -52,6 +52,7 @@ public class Game
             if (!skipTurn)
             {
                 Console.WriteLine($"{name}'s turn:");
+                humanPlayer.ShowHand();
                 humanPlayer.cardChooser.ChooseCard(humanPlayer);
             }
             else

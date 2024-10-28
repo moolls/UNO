@@ -15,62 +15,32 @@ public class StupidCardChooser : ICardChooser
         this.deck = deck;
 
     }
- public void ChooseCard(Player player){
-    
-    while(true)
+    public void ChooseCard(Player player)
     {
-            
+        while (true)
+        {
             Thread.Sleep(5000);
-            Console.Write($"Last drawn card: ");
-            playedCards.DisplayFirstCard();
-
-            Console.WriteLine("Robotics hand: ");
+            DisplayLastDrawnCard();
             player.ShowHand();
 
-            // Låt spelaren välja ett kort
-            bool maxCardsDrawn =false;
             choosenCard = RandomCard(player.hand);
 
-            // Kontrollera om det valda kortet kan spelas
-            if (playedCards.CanPlayCard(choosenCard))
+            if (choosenCard == null)
             {
-                // Kortet kan spelas, bryt ut ur loopen och spela kortet
-                Console.WriteLine($"Robotic selected: {choosenCard.GetColor()} {choosenCard.GetValue()}");
-                playedCards.AddCardToFront(choosenCard);
-                player.hand.RemoveCard(choosenCard);
-                ResetDraw();
-                break;
+                if (!TryDrawCard(player))
+                {
+                    Console.WriteLine("Robotic has drawn the maximum number of cards and cannot play. Next player's turn.");
+                    ResetDraw();
+                    break; // Switch to the next player
+                }
             }
             else
             {
-                // Kortet kan inte spelas, ge feedback till spelaren
-                
-                Console.WriteLine($"Robotic cannot play {choosenCard.GetColor()} {choosenCard.GetValue()}. Robotic tries again");
-                if (drawCounter < 3)
-                {
-                    player.hand.DrawCardToHand(deck); // Dra ett kort och lägg till i handen
-                    drawCounter++;
-                    Console.WriteLine($"Robotic drew a new card. Cards drawn: {drawCounter}/3");
-                    
-                }
-                else {
-                    
-                    maxCardsDrawn = true; // Flagga sätts till true när max kort har dragits
-                }
-
-             if (maxCardsDrawn)
-            {
-                Console.WriteLine("Robotic have drawn the maximum number of cards and cannot play. Next player's turn.");
-                ResetDraw();
-                break; // Byt till nästa spelare
+                PlayCard(player);
+                break; // Exit loop after playing a valid card
             }
         }
-                // Om spelaren har dragit tre kort och inte kan lägga något kort, växla till nästa spelare
-            
-            
-     }
-    
- }
+    }
 
 public IUnoCard RandomCard(Hand hand)
 {
@@ -78,6 +48,36 @@ public IUnoCard RandomCard(Hand hand)
     int randomCardIndex = random.Next(0, hand.Count());
     return hand.CurrentCard(randomCardIndex);
 }
+
+private void DisplayLastDrawnCard()
+    {
+        Console.Write($"Last drawn card: ");
+        playedCards.DisplayFirstCard();
+    }
+
+private void PlayCard(Player player)
+    {
+        Console.WriteLine($"Robotic selected: {choosenCard.GetColor()} {choosenCard.GetValue()}");
+        playedCards.AddCardToFront(choosenCard);
+        player.hand.RemoveCard(choosenCard);
+        ResetDraw();
+    }
+
+private bool TryDrawCard(Player player)
+    {
+        if (drawCounter < 3)
+        {
+            player.hand.DrawCardToHand(deck); // Draw a card and add it to the hand
+            drawCounter++;
+            Console.WriteLine($"Robotic drew a new card. Cards drawn: {drawCounter}/3");
+            return true; // Card was drawn
+        }
+        else
+        {
+            maxCardsDrawn = true; // Set flag when maximum cards have been drawn
+            return false; // Cannot draw a card
+        }
+    }
 
     public void ResetDraw()
     {

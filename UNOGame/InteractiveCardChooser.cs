@@ -1,111 +1,107 @@
 public class InteractiveCardChooser : ICardChooser
 {
-    Deck deck;
-    PlayedCards playedCards;
-    IUnoCard choosenCard;
-    int indexCurrentCard;
-    
-    
+    private Deck deck;
+    private PlayedCards playedCards;
+    private int indexCurrentCard;
+    private int drawCounter = 0;
+    private bool maxDrawReached = false; // Flag to indicate max draws reached
+
     public InteractiveCardChooser(Deck deck, PlayedCards playedCards)
     {
         this.playedCards = playedCards;
         this.deck = deck;
         indexCurrentCard = 0;
-
     }
-    
+
     public void ChooseCard(Player player)
     {
-        
-      while (true)
+        Console.WriteLine("Select a card to play.");
+        bool shouldDrawCard = false;
+        IUnoCard chosenCard;
+
+        while (true)
         {
-            // Visa senaste spelade kort
-            Console.Write($"Last drawn card: ");
+            Console.Write("Last drawn card: ");
             playedCards.DisplayFirstCard();
 
-            // Låt spelaren välja ett kort
-            bool maxCardsDrawn;
-            choosenCard = IterateHand(deck, player, out maxCardsDrawn);
+            // Use IterateHand to select a card or detect a draw attempt
+            chosenCard = IterateHand(player, out shouldDrawCard);
 
-            // Kontrollera om det valda kortet kan spelas
-            if (playedCards.CanPlayCard(choosenCard))
+            // Check if the chosen card can be played
+            if (playedCards.CanPlayCard(chosenCard))
             {
-                // Kortet kan spelas, bryt ut ur loopen och spela kortet
-                
-                Console.WriteLine($"You selected: {choosenCard.GetColor()} {choosenCard.GetValue()}");
-                playedCards.AddCardToFront(choosenCard);
-                player.hand.RemoveCard(choosenCard);
-                break;
+                Console.WriteLine($"You selected: {chosenCard.GetColor()} {chosenCard.GetValue()}");
+                playedCards.AddCardToFront(chosenCard);
+                player.hand.RemoveCard(chosenCard);
+                ResetDrawCounter();
+                break; // Exit the loop after playing a valid card
             }
-            else
-            {
-                // Kortet kan inte spelas, ge feedback till spelaren
-                
-                Console.WriteLine($"You cannot play {choosenCard.GetColor()} {choosenCard.GetValue()}. Try again or draw a card.");
 
-                // Om spelaren har dragit tre kort och inte kan lägga något kort, växla till nästa spelare
-                if (maxCardsDrawn)
+            // Handle card drawing, only if max draws haven't been reached
+            if (shouldDrawCard && !maxDrawReached)
+            {
+                DrawCard(player);
+                
+                // If maximum number of draws has been reached, set the flag
+                if (drawCounter >= 3)
                 {
-                    Console.WriteLine("You have drawn the maximum number of cards and cannot play. Next player's turn.");
-                    break; // Byt till nästa spelare
+                    maxDrawReached = true;
+                    Console.WriteLine("You have reached the maximum number of draws.");
                 }
+                continue; // Restart the loop after drawing a card
             }
+
+            // Inform the player if the chosen card cannot be played
+            Console.WriteLine($"You cannot play {chosenCard.GetColor()} {chosenCard.GetValue()}. Try again or draw a card.");
         }
     }
 
-public IUnoCard IterateHand(Deck deck, Player player, out bool maxCardsDrawn)
-{
-    IEnumerator<IUnoCard> forwardIterator = InfiniteIterator(player.hand).GetEnumerator();
-    IEnumerator<IUnoCard> backwardIterator = InfiniteReverseIterator(player.hand).GetEnumerator();
-
-    bool usingForward = true;
-    IUnoCard currentItem = null;
-    ConsoleKey key;
-    int drawCounter = 0;
-    bool invalidKeyMessageShown = false;
-
-    maxCardsDrawn = false; 
-    player.ShowHand();
-
-    // Visa navigeringsinstruktioner en gång i början
-    Console.WriteLine("Use Left/Right arrows to navigate, Enter to select item, or press D to draw a new card.");
-    
-    // Spara startpositionen för att skriva över aktuellt kort varje gång
-    int cursorTop = Console.CursorTop;
-
-    do
+    public IUnoCard IterateHand(Player player, out bool shouldDrawCard)
     {
-        // Hämta aktuellt kort baserat på riktningen
-        if (usingForward)
-        {
-            if (!forwardIterator.MoveNext())
-            {
-                forwardIterator = InfiniteIterator(player.hand).GetEnumerator();
-                forwardIterator.MoveNext();
-            }
-            currentItem = forwardIterator.Current;
-        }
-        else
-        {
-            if (!backwardIterator.MoveNext())
-            {
-                backwardIterator = InfiniteReverseIterator(player.hand).GetEnumerator();
-                backwardIterator.MoveNext();
-            }
-            currentItem = backwardIterator.Current;
-        }
+        IEnumerator<IUnoCard> forwardIterator = InfiniteIterator(player.hand).GetEnumerator();
+        IEnumerator<IUnoCard> backwardIterator = InfiniteReverseIterator(player.hand).GetEnumerator();
+        bool usingForward = true;
+        IUnoCard currentItem = null;
+        shouldDrawCard = false;
+        bool invalidKeyMessageShown = false;
 
-        // Gå till startpositionen och skriv över tidigare kortinformation
-        Console.SetCursorPosition(0, cursorTop);
-        Console.Write($"Current item: {currentItem.GetColor()} {currentItem.GetValue()}     "); // Extra blanksteg för att rensa eventuellt tidigare text
+        player.ShowHand();
+        do
+        {
+            currentItem = NavigateHand(forwardIterator, backwardIterator, usingForward);
+            player.ShowHand();
+            DisplayCardOptions(currentItem);
+            ConsoleKey key = GetValidKey(ref invalidKeyMessageShown);
 
-        // Läs tangenttryckning och kontrollera giltighet
+            usingForward = GetNavigationDirection(key, ref shouldDrawCard);
+
+
+            if (key == ConsoleKey.Enter || shouldDrawCard) break;
+        } while (true);
+
+        return currentItem;
+    }
+
+    private IUnoCard NavigateHand(IEnumerator<IUnoCard> forwardIterator, IEnumerator<IUnoCard> backwardIterator, bool usingForward)
+    {
+        if (usingForward) forwardIterator.MoveNext();
+        else backwardIterator.MoveNext();
+        return usingForward ? forwardIterator.Current : backwardIterator.Current;
+    }
+
+    private void DisplayCardOptions(IUnoCard currentItem)
+    {
+        Console.WriteLine($"Current item: {currentItem.GetColor()} {currentItem.GetValue()}");
+        Console.WriteLine("Use Left/Right arrows to navigate, Enter to select item, or press D to draw a new card.");
+    }
+
+    private ConsoleKey GetValidKey(ref bool invalidKeyMessageShown)
+    {
+        ConsoleKey key;
         do
         {
             key = Console.ReadKey(true).Key;
-
-            // Kontrollera om tangenten är ogiltig och visa meddelande bara en gång
-            if (key != ConsoleKey.RightArrow && key != ConsoleKey.LeftArrow && key != ConsoleKey.Enter && key != ConsoleKey.D)
+            if (!IsNavigationKey(key))
             {
                 if (!invalidKeyMessageShown)
                 {
@@ -113,49 +109,40 @@ public IUnoCard IterateHand(Deck deck, Player player, out bool maxCardsDrawn)
                     invalidKeyMessageShown = true;
                 }
             }
-            else
-            {
-                invalidKeyMessageShown = false; // Återställ flaggan om en giltig tangent trycks ned
-            }
+            else invalidKeyMessageShown = false;
+        } while (!IsNavigationKey(key));
 
-        } while (key != ConsoleKey.RightArrow && key != ConsoleKey.LeftArrow && key != ConsoleKey.Enter && key != ConsoleKey.D);
+        return key;
+    }
 
-        // Hantera navigering och kortdragning
-        if (key == ConsoleKey.RightArrow)
-        {
-            usingForward = true;
-        }
-        else if (key == ConsoleKey.LeftArrow)
-        {
-            usingForward = false;
-        }
-        else if (key == ConsoleKey.D)
-        {
-            if (drawCounter < 3)
-            {
-                player.hand.DrawCardToHand(deck);
-                drawCounter++;
-                Console.WriteLine($"You drew a new card. Cards drawn: {drawCounter}/3");
-                player.ShowHand();
-            }
-            else
-            {
-                maxCardsDrawn = true;
-                Console.WriteLine("You have reached the maximum number of draws.");
-            }
-        }
-
-    } while (key != ConsoleKey.Enter && !maxCardsDrawn);
-
-    return currentItem;
-}
-
- public IEnumerable<IUnoCard> InfiniteIterator(Hand hand)
+    private bool GetNavigationDirection(ConsoleKey key, ref bool shouldDrawCard)
     {
-        while (true)  // Infinite loop
+        switch (key)
         {
-            
-            indexCurrentCard = (indexCurrentCard + 1) % hand.Count(); // Circular navigation
+            case ConsoleKey.RightArrow: return true;
+            case ConsoleKey.LeftArrow: return false;
+            default: return true;
+        }
+    }
+
+    private void DrawCard(Player player)
+    {
+        if (drawCounter < 3)
+        {
+            player.hand.DrawCardToHand(deck);
+            drawCounter++;
+            Console.WriteLine($"You drew a new card. Cards drawn: {drawCounter}/3");
+        }
+    }
+
+    private bool IsNavigationKey(ConsoleKey key) =>
+        key == ConsoleKey.RightArrow || key == ConsoleKey.LeftArrow || key == ConsoleKey.Enter || key == ConsoleKey.D;
+
+    public IEnumerable<IUnoCard> InfiniteIterator(Hand hand)
+    {
+        while (true)
+        {
+            indexCurrentCard = (indexCurrentCard + 1) % hand.Count();
             yield return hand.CurrentCard(indexCurrentCard);
         }
     }
@@ -164,14 +151,14 @@ public IUnoCard IterateHand(Deck deck, Player player, out bool maxCardsDrawn)
     {
         while (true)
         {
-            indexCurrentCard = (indexCurrentCard - 1 + hand.Count()) % hand.Count(); // Circular navigation backwards
+            indexCurrentCard = (indexCurrentCard - 1 + hand.Count()) % hand.Count();
             yield return hand.CurrentCard(indexCurrentCard);
         }
     }
 
-    public bool HasMaxDrawnCards(int drawCounter)
+    private void ResetDrawCounter()
     {
-        return drawCounter >= 3;
+        drawCounter = 0;
+        maxDrawReached = false;
     }
-
 }
